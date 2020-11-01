@@ -97,11 +97,15 @@ if __name__ == "__main__":
     pytesseract.pytesseract.tesseract_cmd = r'h:/soft/tesseract/tesseract.exe'
        
     k=0
-    all_text = '' # Весь распознанный текст всех элементов
+    textz = []
+    text_labels = []
     df = pd.DataFrame()
-    names = os.listdir(os.getcwd()+'/Dataset/Rent')
+    #Ограничились одним каталогом из-за длительности обработки
+    names = os.listdir(os.getcwd()+'/Dataset/Rent') 
     for pdf_fp in names:
         k+=1
+        if k==10:
+            break
         print(pdf_fp)
         # Перебираем картинки в PDF-файле
         fullname = os.path.join(os.getcwd()+'/Dataset/Rent/', pdf_fp)
@@ -111,24 +115,25 @@ if __name__ == "__main__":
                 img = Image.open(StringIO(data))            
                 # Распознаем с помощью Tesseract
                 text = pytesseract.image_to_string(img.convert("RGB"), lang="rus")
+                textz.append(text)
+                text_labels.append(1) # Номер класса
                 # Можно просто по ключевому слову идентифицировать
                 if(str.lower(text).find('договор аренды')!=-1):
                     print('Recognized')
             except Exception as e:
                 print ("Failed to read image with PIL: {}".format(e))
                 continue
-    # Вариант классификатора по текстам Random Forest с TF-IDF
-    textz = ['текст номер один', 'текст номер два', 'комьютеры в лингвистике', 'компьютеры и обработка текстов']
-    texts_labels = [1, 1, 0, 0]
+    
+    # Вариант классификатора по текстам Random Forest с TF-IDF   
      
     text_clf = Pipeline([
                          ('tfidf', TfidfVectorizer()),
                          ('clf', RandomForestClassifier())
                          ])
      
-    text_clf.fit(textz, texts_labels)
+    text_clf.fit(textz[:-1], text_labels[:-1])
      
-    res = text_clf.predict(['компьютеры в быту'])
+    res = text_clf.predict([text[-1]])
     print(res)
     input()
 
